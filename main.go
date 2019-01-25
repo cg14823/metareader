@@ -63,9 +63,9 @@ func main() {
 				},
 			},
 			&cbflag.Command{
-				Name: "failoverlog",
-				Desc: "Read and display the snapshot file data",
-				Run:  failCtx.Run,
+				Name:     "failoverlog",
+				Desc:     "Read and display the snapshot file data",
+				Run:      failCtx.Run,
 				Commands: []*cbflag.Command{},
 				Flags: []*cbflag.Flag{
 					cbflag.StringFlag(
@@ -94,7 +94,6 @@ func main() {
 						/* Hidden       */ false,
 					),
 				},
-
 			},
 		},
 		Writer: os.Stdout,

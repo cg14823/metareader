@@ -34,18 +34,18 @@ func ParseFilterExpresion(filterExp string) ([]string, error) {
 			if rng := strings.Split(vbid, "-"); len(rng) == 2 {
 				start, err := strconv.Atoi(rng[0])
 				if err != nil {
-					return nil, &ParseError{"invalid range start: "+rng[0]}
+					return nil, &ParseError{"invalid range start: " + rng[0]}
 				}
 				end, err := strconv.Atoi(rng[1])
 				if err != nil {
-					return nil, &ParseError{"invalid range end: "+rng[1]}
+					return nil, &ParseError{"invalid range end: " + rng[1]}
 				}
 
 				if start >= end {
 					return nil, &ParseError{"range start must be smaller than range end"}
 				}
 
-				for vbid := start; vbid <= end; vbid ++ {
+				for vbid := start; vbid <= end; vbid++ {
 					vbids = append(vbids, strconv.Itoa(vbid))
 				}
 

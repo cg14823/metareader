@@ -24,9 +24,8 @@ func (se *SnapError) Error() string {
 	return se.reason
 }
 
-
 func (s *Ctx) Run() {
-	f , err := os.Stat(s.Path)
+	f, err := os.Stat(s.Path)
 	if err != nil {
 		utils.HandleError(err)
 	}
@@ -56,7 +55,7 @@ func (s *Ctx) walk() {
 
 	for _, f := range files {
 		if match, _ := regexp.MatchString("snapshot_([\\d]+).snp", f.Name()); match {
-			vbid := f.Name()[9:len(f.Name()) - 4]
+			vbid := f.Name()[9 : len(f.Name())-4]
 			b, err := ioutil.ReadFile(filepath.Join(s.Path, f.Name()))
 			if err != nil {
 				fmt.Printf("Error reading %s: %s\n", f.Name(), err.Error())
@@ -77,7 +76,7 @@ func (s *Ctx) printFiltered(vbids []string) {
 	for k, _ := range vbids {
 		_, err := os.Stat(filepath.Join(s.Path, "snapshot_"+vbids[k]+".snp"))
 		if err != nil {
-			fmt.Println("Snapshot file for vbid (" + vbids[k]+ ") could not be found")
+			fmt.Println("Snapshot file for vbid (" + vbids[k] + ") could not be found")
 			continue
 		}
 
@@ -115,4 +114,3 @@ func snapshotHumanReadableFormat(vbid string, snapBytes []byte) (string, error) 
 	}
 	return fmt.Sprintf("(vBucket %s) start: %d end: %d lastSeqNo: %d", vbid, start, end, seqNo), nil
 }
-

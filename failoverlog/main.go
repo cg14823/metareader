@@ -12,12 +12,12 @@ import (
 )
 
 type Ctx struct {
-	Path string
+	Path      string
 	FilterExp string
 }
 
 func (c *Ctx) Run() {
-	f , err := os.Stat(c.Path)
+	f, err := os.Stat(c.Path)
 	if err != nil {
 		utils.HandleError(err)
 	}
@@ -44,7 +44,7 @@ func (c *Ctx) printFiltered(vbids []string) {
 	for k, _ := range vbids {
 		_, err := os.Stat(filepath.Join(c.Path, "failoverlog_"+vbids[k]+".fol"))
 		if err != nil {
-			fmt.Println("Failover log file for vbid (" + vbids[k]+ ") could not be found")
+			fmt.Println("Failover log file for vbid (" + vbids[k] + ") could not be found")
 			continue
 		}
 
@@ -71,7 +71,7 @@ func (c *Ctx) walk() {
 
 	for _, f := range files {
 		if match, _ := regexp.MatchString("failoverlog_([\\d]+).fol", f.Name()); match {
-			vbid := f.Name()[12:len(f.Name()) - 4]
+			vbid := f.Name()[12 : len(f.Name())-4]
 			b, err := ioutil.ReadFile(filepath.Join(c.Path, f.Name()))
 			if err != nil {
 				fmt.Printf("Error reading %s: %s\n", f.Name(), err.Error())
@@ -103,7 +103,7 @@ type FailoverLogError struct {
 }
 
 func (fe *FailoverLogError) Error() string {
-	return  fe.reason
+	return fe.reason
 }
 
 func NewFailoverLog() *FailoverLog {
