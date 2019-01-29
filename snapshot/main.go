@@ -3,6 +3,7 @@ package snapshot
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"metareader/utils"
@@ -12,8 +13,19 @@ import (
 )
 
 type Ctx struct {
-	Path      string
-	FilterExp string
+	Path       string
+	FilterExp  string
+	JsonFormat bool
+}
+
+type Snap struct {
+	Start uint64 `json:"start"`
+	End   uint64 `json:"end"`
+	SeqNo uint64 `json:"seqNo"`
+}
+
+type SnapOut struct {
+	Snapshots map[string]*Snap `json:"snapshots"`
 }
 
 type SnapError struct {
@@ -53,30 +65,63 @@ func (s *Ctx) walk() {
 		utils.HandleError(err)
 	}
 
+	finalOutput := ""
+	jsonOut := &SnapOut{}
+	if s.JsonFormat {
+		jsonOut.Snapshots = make(map[string]*Snap)
+	}
+
 	for _, f := range files {
 		if match, _ := regexp.MatchString("snapshot_([\\d]+).snp", f.Name()); match {
 			vbid := f.Name()[9 : len(f.Name())-4]
 			b, err := ioutil.ReadFile(filepath.Join(s.Path, f.Name()))
 			if err != nil {
 				fmt.Printf("Error reading %s: %s\n", f.Name(), err.Error())
-			}
-
-			out, err := snapshotHumanReadableFormat(vbid, b)
-			if err != nil {
-				fmt.Println(err.Error())
 				continue
 			}
 
-			fmt.Println(out)
+			if s.JsonFormat {
+				if snap, err := unpackSnapshot(b); err == nil {
+					jsonOut.Snapshots[vbid] = snap
+				}
+			} else {
+				out, err := snapshotHumanReadableFormat(vbid, b)
+				if err != nil {
+					fmt.Println(err.Error())
+					continue
+				}
+
+				finalOutput += out + "\n"
+			}
 		}
+	}
+
+	if s.JsonFormat {
+		data, err := json.Marshal(jsonOut)
+		if err != nil {
+			fmt.Println("ERROR: Could not retrieve snapshot markers")
+			os.Exit(1)
+		}
+
+		fmt.Printf("%s\n", data)
+	} else {
+		fmt.Println(finalOutput)
 	}
 }
 
 func (s *Ctx) printFiltered(vbids []string) {
+	finalOutput := ""
+	jsonOut := &SnapOut{}
+	if s.JsonFormat {
+		jsonOut.Snapshots = make(map[string]*Snap)
+	}
+
 	for k, _ := range vbids {
 		_, err := os.Stat(filepath.Join(s.Path, "snapshot_"+vbids[k]+".snp"))
 		if err != nil {
-			fmt.Println("Snapshot file for vbid (" + vbids[k] + ") could not be found")
+			if !s.JsonFormat {
+				fmt.Println("Snapshot file for vbid (" + vbids[k] + ") could not be found")
+			}
 			continue
 		}
 
@@ -85,32 +130,61 @@ func (s *Ctx) printFiltered(vbids []string) {
 			fmt.Printf("Error reading %s: %s\n", "snapshot_"+vbids[k]+".snp", err.Error())
 		}
 
-		out, err := snapshotHumanReadableFormat(vbids[k], b)
+		if s.JsonFormat {
+			if snap, err := unpackSnapshot(b); err == nil {
+				jsonOut.Snapshots[vbids[k]] = snap
+			}
+		} else {
+			out, err := snapshotHumanReadableFormat(vbids[k], b)
+			if err != nil {
+				fmt.Println(err.Error())
+				continue
+			}
+
+			finalOutput += out + "\n"
+		}
+	}
+
+	if s.JsonFormat {
+		data, err := json.Marshal(jsonOut)
 		if err != nil {
-			fmt.Println(err.Error())
-			continue
+			fmt.Println("ERROR: Could not retrieve snapshot markers")
+			os.Exit(1)
 		}
 
-		fmt.Println(out)
+		fmt.Printf("%s\n", data)
+	} else {
+		fmt.Println(finalOutput)
 	}
 }
 
-func snapshotHumanReadableFormat(vbid string, snapBytes []byte) (string, error) {
+func unpackSnapshot(snapBytes []byte) (*Snap, error) {
 	buffer := bytes.NewBuffer(snapBytes)
-	var start uint64
-	var end uint64
-	var seqNo uint64
-	err := binary.Read(buffer, binary.BigEndian, &start)
+	snap := &Snap{}
+	err := binary.Read(buffer, binary.BigEndian, &snap.Start)
 	if err != nil {
-		return "", &SnapError{"could not read file due to: " + err.Error()}
+		return nil, &SnapError{"could not read file due to: " + err.Error()}
 	}
-	err = binary.Read(buffer, binary.BigEndian, &end)
+
+	err = binary.Read(buffer, binary.BigEndian, &snap.End)
 	if err != nil {
-		return "", &SnapError{"could not read file due to: " + err.Error()}
+		return nil, &SnapError{"could not read file due to: " + err.Error()}
 	}
-	err = binary.Read(buffer, binary.BigEndian, &seqNo)
+
+	err = binary.Read(buffer, binary.BigEndian, &snap.SeqNo)
 	if err != nil {
-		return "", &SnapError{"could not read file due to: " + err.Error()}
+		return nil, &SnapError{"could not read file due to: " + err.Error()}
 	}
-	return fmt.Sprintf("(vBucket %s) start: %d end: %d lastSeqNo: %d", vbid, start, end, seqNo), nil
+
+	return snap, nil
+}
+
+func snapshotHumanReadableFormat(vbid string, snapBytes []byte) (string, error) {
+	snap, err := unpackSnapshot(snapBytes)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("(vBucket %s) start: %d end: %d lastSeqNo: %d", vbid, snap.Start, snap.End, snap.SeqNo),
+		nil
 }

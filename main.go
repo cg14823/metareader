@@ -60,6 +60,16 @@ func main() {
 						/* Required     */ false,
 						/* Hidden       */ false,
 					),
+					cbflag.BoolFlag(
+						/* Destination  */ &snapCtx.JsonFormat,
+						/* Default      */ false,
+						/* Short Option */ "j",
+						/* Long Option  */ "json",
+						/* Env Variable */ "",
+						/* Usage        */ "Returns snapshot data as json",
+						/* Deprecated   */ []string{},
+						/* Hidden       */ false,
+					),
 				},
 			},
 			&cbflag.Command{
