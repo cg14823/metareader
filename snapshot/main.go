@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"metareader/utils"
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/cg14823/metareader/utils"
 )
 
 type Ctx struct {

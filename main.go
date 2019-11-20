@@ -5,10 +5,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/couchbase/cbflag"
-	"metareader/failoverlog"
-	"metareader/snapshot"
 	"os"
+
+	"github.com/cg14823/metareader/failoverlog"
+	"github.com/cg14823/metareader/snapshot"
+	"github.com/couchbase/cbflag"
 )
 
 type MetaReaderCtx struct {
